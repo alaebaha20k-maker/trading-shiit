@@ -111,7 +111,7 @@ function creerModeleTrading() {
 
 
 /* ═══════════════════════════════════════════════════════════════════
-   FEUILLE : STATISTIQUES
+   FEUILLE : STATISTIQUES (Expanded Layout)
    ═══════════════════════════════════════════════════════════════════ */
 function _setupStats(ss, sh, shTr) {
   sh.clear();
@@ -119,44 +119,23 @@ function _setupStats(ss, sh, shTr) {
   sh.clearNotes();
   sh.getCharts().forEach(function (c) { sh.removeChart(c); });
 
-  /* ── Dimensions ── */
-  var colW = {1:170, 2:130, 3:20, 4:100, 5:100, 6:100, 7:100, 8:20,
-              9:115, 10:80, 11:80, 12:80, 13:120};
-  Object.keys(colW).forEach(function (c) { sh.setColumnWidth(Number(c), colW[c]); });
-  sh.setRowHeight(1, 42);
-  for (var r = 2; r <= 30; r++) sh.setRowHeight(r, 30);
-  sh.setRowHeight(17, 36);
-
   var annee = new Date().getFullYear();
-  var T     = "'" + CFG.TRADES + "'";   // référence feuille (avec espaces)
+  var T     = "'" + CFG.TRADES + "'";
 
-  /* ── A1:B1  TITRE PRINCIPAL ── */
+  /* ── SECTION 1: BILAN GLOBAL (A1:B12) ── */
   sh.getRange('A1:B1').merge()
     .setValue(annee + ' BILAN GLOBAL')
     .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
     .setFontWeight('bold').setFontSize(14)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
+  sh.setRowHeight(1, 42);
 
-  /* ── A2:B12  MÉTRIQUES ── */
-  var labels = [
-    'Capital Initial',    // A2  → B2  saisie manuelle
-    'Trades',             // A3  → B3
-    'Gains',              // A4  → B4
-    'Pertes',             // A5  → B5
-    'Taux de Réussite',   // A6  → B6
-    'Espérance (EV)',      // A7  → B7
-    'Facteur de Profit',  // A8  → B8
-    'Perte Moyenne',      // A9  → B9
-    'Gain Moyen',         // A10 → B10
-    'Profit Total',       // A11 → B11
-    'ROI',                // A12 → B12
-  ];
+  var labels = ['Capital Initial','Trades','Gains','Pertes','Taux de Réussite',
+                'EV','Facteur de Profit','Perte Moyenne','Gain Moyen','Profit','ROI'];
   sh.getRange(2, 1, labels.length, 1)
     .setValues(labels.map(function (l) { return [l]; }))
-    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR)
-    .setVerticalAlignment('middle');
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR);
 
-  // Formules (B3:B12)
   var formules = [
     ['=COUNTA('+T+'!B3:B5000)'],
     ['=COUNTIF('+T+'!L3:L5000,">0")'],
@@ -170,8 +149,6 @@ function _setupStats(ss, sh, shTr) {
     ['=IFERROR(B11/B2,0)'],
   ];
   sh.getRange(3, 2, formules.length, 1).setValues(formules);
-
-  // Formats numériques
   sh.getRange('B2').setNumberFormat('"€ "#,##0.00');
   sh.getRange('B3:B5').setNumberFormat('#,##0');
   sh.getRange('B6').setNumberFormat('0.00%');
@@ -180,7 +157,111 @@ function _setupStats(ss, sh, shTr) {
   sh.getRange('B9:B11').setNumberFormat('"€ "#,##0.00');
   sh.getRange('B12').setNumberFormat('0.00%');
 
-  // Mise en forme conditionnelle Profit + ROI
+  /* ── SECTION 2: DÉTAIL PAR JOUR DE SEMAINE (A17:G25) ── */
+  sh.getRange('A17:G17').merge()
+    .setValue('Détail par Jour de Semaine')
+    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
+    .setFontWeight('bold').setFontSize(11);
+
+  sh.getRange(18, 1, 1, 7)
+    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit','']])
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
+
+  var joursFull = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  joursFull.forEach(function (jour, i) {
+    var r = 19 + i;
+    var wd = i + 1;
+    sh.getRange(r, 1).setValue(jour);
+    sh.getRange(r, 2).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+'))');
+    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!L3:L5000>0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!L3:L5000<0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
+    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    if (i % 2 === 0) sh.getRange(r, 1, 1, 7).setBackground(CFG.BLEU_CLAIR);
+  });
+
+  /* ── SECTION 3: DIRECTION BREAKDOWN (A26:G33) ── */
+  sh.getRange('A26:G26').merge()
+    .setValue('Direction Breakdown')
+    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
+    .setFontWeight('bold').setFontSize(11);
+
+  sh.getRange(27, 1, 1, 7)
+    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit','']])
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
+
+  var directions = [['Long','=COUNTIF('+T+'!D3:D5000,"ACHAT")'],
+                    ['Short','=COUNTIF('+T+'!D3:D5000,"VENTE")']];
+  directions.forEach(function (dir, idx) {
+    var r = 28 + idx;
+    sh.getRange(r, 1).setValue(dir[0]);
+    sh.getRange(r, 2).setFormula(dir[1]);
+    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+dir[0].substring(0,4)+'")*(' +T+'!L3:L5000>0))');
+    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+dir[0].substring(0,4)+'")*(' +T+'!L3:L5000<0))');
+    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
+    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+dir[0].substring(0,4)+'")*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    if (idx % 2 === 0) sh.getRange(r, 1, 1, 7).setBackground(CFG.BLEU_CLAIR);
+  });
+
+  /* ── SECTION 4: SYMBOL BREAKDOWN (A35:G42) ── */
+  sh.getRange('A35:G35').merge()
+    .setValue('Symbol Breakdown')
+    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
+    .setFontWeight('bold').setFontSize(11);
+
+  sh.getRange(36, 1, 1, 7)
+    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit','']])
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
+
+  var symbols = ['EUR/USD','GBP/USD','USD/JPY','EUR/GBP'];
+  symbols.forEach(function (sym, idx) {
+    var r = 37 + idx;
+    sh.getRange(r, 1).setValue(sym);
+    sh.getRange(r, 2).setFormula('=COUNTIF('+T+'!C3:C5000,"'+sym+'")');
+    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000>0))');
+    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000<0))');
+    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
+    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    if (idx % 2 === 0) sh.getRange(r, 1, 1, 7).setBackground(CFG.BLEU_CLAIR);
+  });
+
+  /* ── SECTION 5: MONTHLY INFO (I1:M30) ── */
+  sh.getRange('I1:M1').merge()
+    .setValue('Monthly Info')
+    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
+    .setFontWeight('bold').setFontSize(11);
+
+  sh.getRange(2, 9, 1, 5)
+    .setValues([['Month','Trades','Wins','Losses','Profit']])
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
+
+  MOIS.forEach(function (moisNom, m) {
+    var r = 3 + m;
+    var mn = m + 1;
+    sh.getRange(r, 9).setValue(moisNom);
+    sh.getRange(r, 10).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+'))');
+    sh.getRange(r, 11).setFormula('=SUMPRODUCT(('+T+'!L3:L5000>0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 12).setFormula('=SUMPRODUCT(('+T+'!L3:L5000<0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 13).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    if (m % 2 === 0) sh.getRange(r, 9, 1, 5).setBackground(CFG.BLEU_CLAIR);
+  });
+
+  /* ── SECTION 6: WEEKLY INFO (I35:M42) ── */
+  sh.getRange('I35:M35').merge()
+    .setValue('Weekly Info')
+    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
+    .setFontWeight('bold').setFontSize(11);
+
+  sh.getRange(36, 9, 1, 5)
+    .setValues([['Week','Trades','Wins','Losses','Profit']])
+    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
+
+  for (var w = 1; w <= 5; w++) {
+    sh.getRange(36 + w, 9).setValue('Week ' + w);
+    sh.getRange(36 + w, 10).setValue(0);  // Placeholder
+  }
+
+  /* ── Mise en forme conditionnelle ── */
   var cfRules = [];
   ['B11', 'B12'].forEach(function (addr) {
     var rng = sh.getRange(addr);
@@ -190,85 +271,6 @@ function _setupStats(ss, sh, shTr) {
       .whenNumberLessThan(0).setFontColor(CFG.ROUGE_TXT).setRanges([rng]).build());
   });
   sh.setConditionalFormatRules(cfRules);
-
-  /* ── ROW 17  EN-TÊTES DE SECTION ── */
-  sh.getRange('A17:G17').merge()
-    .setValue('Détail par Jour de Semaine')
-    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
-    .setFontWeight('bold').setFontSize(11)
-    .setHorizontalAlignment('center').setVerticalAlignment('middle');
-
-  sh.getRange('I17:M17').merge()
-    .setValue('Informations Mensuelles')
-    .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
-    .setFontWeight('bold').setFontSize(11)
-    .setHorizontalAlignment('center').setVerticalAlignment('middle');
-
-  /* ── ROW 18  EN-TÊTES DES TABLEAUX ── */
-  sh.getRange(18, 1, 1, 7)
-    .setValues([['Jour','Trades','Gains','Pertes','% Réussite','P/L Total','P/L Moyen']])
-    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
-
-  sh.getRange(18, 9, 1, 5)
-    .setValues([['Mois','Trades','Gains','Pertes','P/L (€)']])
-    .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
-
-  /* ── ROWS 19-25  DÉTAIL PAR JOUR (WEEKDAY type 2 : Lun=1 … Dim=7) ── */
-  var joursFull = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-  joursFull.forEach(function (jour, i) {
-    var r  = 19 + i;
-    var wd = i + 1; // type 2 : Lun=1
-    sh.getRange(r, 1).setValue(jour).setFontWeight('bold');
-    sh.getRange(r, 2).setFormula(
-      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*' +
-      '(WEEKDAY('+T+'!B3:B5000,2)='+wd+'))');
-    sh.getRange(r, 3).setFormula(
-      '=SUMPRODUCT(('+T+'!L3:L5000>0)*' +
-      '(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*' +
-      '('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 4).setFormula(
-      '=SUMPRODUCT(('+T+'!L3:L5000<0)*' +
-      '(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*' +
-      '('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)')
-      .setNumberFormat('0.00%');
-    sh.getRange(r, 6).setFormula(
-      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*' +
-      '(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*' +
-      T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
-    sh.getRange(r, 7).setFormula('=IFERROR(F'+r+'/B'+r+',0)')
-      .setNumberFormat('"€ "#,##0.00');
-    if (i % 2 === 0) sh.getRange(r, 1, 1, 7).setBackground(CFG.ALT_BG);
-  });
-  sh.getRange(19, 1, 7, 7).setBorder(true, true, true, true, true, true);
-
-  /* ── ROWS 19-30  INFORMATIONS MENSUELLES (cols I-M) ── */
-  MOIS.forEach(function (moisNom, m) {
-    var mr  = 19 + m;
-    var mn  = m + 1;
-    sh.getRange(mr, 9).setValue(moisNom).setFontWeight('bold');
-    sh.getRange(mr, 10).setFormula(
-      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*' +
-      '(MONTH('+T+'!B3:B5000)='+mn+')*' +
-      '(YEAR('+T+'!B3:B5000)='+annee+'))');
-    sh.getRange(mr, 11).setFormula(
-      '=SUMPRODUCT(('+T+'!L3:L5000>0)*' +
-      '(MONTH('+T+'!B3:B5000)='+mn+')*' +
-      '(YEAR('+T+'!B3:B5000)='+annee+')*' +
-      '('+T+'!B3:B5000<>""))');
-    sh.getRange(mr, 12).setFormula(
-      '=SUMPRODUCT(('+T+'!L3:L5000<0)*' +
-      '(MONTH('+T+'!B3:B5000)='+mn+')*' +
-      '(YEAR('+T+'!B3:B5000)='+annee+')*' +
-      '('+T+'!B3:B5000<>""))');
-    sh.getRange(mr, 13).setFormula(
-      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*' +
-      '(MONTH('+T+'!B3:B5000)='+mn+')*' +
-      '(YEAR('+T+'!B3:B5000)='+annee+')*' +
-      T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
-    if (m % 2 === 0) sh.getRange(mr, 9, 1, 5).setBackground(CFG.ALT_BG);
-  });
-  sh.getRange(19, 9, 12, 5).setBorder(true, true, true, true, true, true);
 
   /* ── GRAPHIQUES ── */
   _graphiqueEquite(sh, shTr);
