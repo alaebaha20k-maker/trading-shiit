@@ -400,7 +400,6 @@ function _setupTrades(sh) {
   ]);
 
   sh.setFrozenRows(2);
-  sh.setFrozenColumns(2);
 }
 
 
