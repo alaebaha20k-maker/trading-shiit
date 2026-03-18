@@ -65,6 +65,8 @@ function onOpen() {
     .addSeparator()
     .addItem('📅  Générer le calendrier',   'genererCalendrier')
     .addItem('🗑️  Effacer le calendrier',   'effacerCalendrier')
+    .addSeparator()
+    .addItem('🔄  Actualiser les graphiques', 'actualiserGraphiques')
     .addToUi();
 }
 
@@ -342,10 +344,67 @@ function _setupStats(ss, sh, shTr) {
 
   /* ── GRAPHIQUES ── */
   SpreadsheetApp.flush();
+  // Force formula evaluation via getValues(), then write STATIC values for charts.
+  // Charts on static values render reliably; call actualiserGraphiques() to refresh.
+  _ecrireDataGraphiques(sh);
   _graphiqueEquite(sh, shTr);
   _graphiqueJoursSemaine(sh);
   _graphiqueDirection(sh);
   _graphiqueSymboles(sh);
+}
+
+/* ────────────────────────────────────────────────────────────
+   DONNÉES STATIQUES POUR GRAPHIQUES (cols P=16, Q=17, rows 2-17)
+   Écrit les valeurs calculées comme nombres statiques pour que
+   le moteur de graphiques les lise de façon fiable.
+
+   Layout :
+     P2:Q8  → Jours de semaine  (label | profit)
+     P10:Q11 → Direction        (label | profit)
+     P13:Q17 → Symboles         (label | profit)
+──────────────────────────────────────────────────────────── */
+function _ecrireDataGraphiques(sh) {
+  // Jours — lire B19:B25 (profits calculés par SUMPRODUCT)
+  var dowProfits = sh.getRange(19, 2, 7, 1).getValues();
+  var dowData = [
+    ['Lundi',    dowProfits[0][0] || 0],
+    ['Mardi',    dowProfits[1][0] || 0],
+    ['Mercredi', dowProfits[2][0] || 0],
+    ['Jeudi',    dowProfits[3][0] || 0],
+    ['Vendredi', dowProfits[4][0] || 0],
+    ['Samedi',   dowProfits[5][0] || 0],
+    ['Dimanche', dowProfits[6][0] || 0]
+  ];
+  sh.getRange(2, 16, 7, 2).setValues(dowData);   // P2:Q8
+
+  // Direction — lire B29:B30
+  var dirProfits = sh.getRange(29, 2, 2, 1).getValues();
+  sh.getRange(10, 16, 2, 2).setValues([
+    ['Long',  dirProfits[0][0] || 0],
+    ['Short', dirProfits[1][0] || 0]
+  ]);  // P10:Q11
+
+  // Symboles — lire B35:B39
+  var symProfits = sh.getRange(35, 2, 5, 1).getValues();
+  var symLabels  = sh.getRange(35, 1, 5, 1).getValues();
+  var symData = [];
+  for (var i = 0; i < 5; i++) {
+    symData.push([symLabels[i][0], symProfits[i][0] || 0]);
+  }
+  sh.getRange(13, 16, 5, 2).setValues(symData);  // P13:Q17
+
+  // Masquer les colonnes P-Q (données auxiliaires)
+  sh.hideColumns(16, 2);
+}
+
+/* Rafraîchit les données des graphiques (à appeler depuis le menu). */
+function actualiserGraphiques() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(CFG.STATS);
+  if (!sh) return;
+  sh.showColumns(16, 2);   // dé-masquer pour pouvoir écrire
+  _ecrireDataGraphiques(sh);
+  SpreadsheetApp.getUi().alert('Graphiques actualisés !');
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -381,9 +440,9 @@ function _graphiqueEquite(shStats, shTrades) {
 function _graphiqueJoursSemaine(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(18, 1, 8, 2))   // A18:B25 — [Info/Profit header] + 7 jours
+    .addRange(sh.getRange(2, 16, 7, 2))   // P2:Q8 — label|profit (valeurs statiques)
     .setPosition(1, 8, 5, 5)
-    .setNumHeaders(1)
+    .setNumHeaders(0)
     .setOption('title', 'Performance par Jour de Semaine')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
@@ -405,10 +464,9 @@ function _graphiqueJoursSemaine(sh) {
 function _graphiqueDirection(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // A28:B30 — [Info/Profit header] + Long + Short (contigus dans le tableau)
-    .addRange(sh.getRange(28, 1, 3, 2))   // A28:B30
+    .addRange(sh.getRange(10, 16, 2, 2))  // P10:Q11 — Long|Short (valeurs statiques)
     .setPosition(1, 13, 5, 5)
-    .setNumHeaders(1)
+    .setNumHeaders(0)
     .setOption('title', 'Direction (Long / Short)')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
@@ -430,10 +488,9 @@ function _graphiqueDirection(sh) {
 function _graphiqueSymboles(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // A34:B39 — [Info/Profit header] + 5 symboles (contigus dans le tableau)
-    .addRange(sh.getRange(34, 1, 6, 2))   // A34:B39
+    .addRange(sh.getRange(13, 16, 5, 2))  // P13:Q17 — symboles (valeurs statiques)
     .setPosition(1, 18, 5, 5)
-    .setNumHeaders(1)
+    .setNumHeaders(0)
     .setOption('title', 'Par Symbole')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
