@@ -1,0 +1,27 @@
+VUE CALENDRIER MENSUEL,,,,,,,
+Mois (1-12) :,1,,,,,,
+Année :,2026,,,,,,
+▶ Renseignez le mois et l'année puis générez le calendrier via le script.,,,,,,,
+JANVIER 2026,,,,,,,,
+Lun,Mar,Mer,Jeu,Ven,Sam,Dim,Totaux Hebdo
+,,1,2,3,4,5,
+,,Trades : 2,Trades : 1,Trades : 1,Trades : 0,Trades : 0,Trades : 4
+,,P/L : 59 €,P/L : -22 €,P/L : 43 €,P/L : 0 €,P/L : 0 €,P/L : 80 €
+6,7,8,9,10,11,12,
+Trades : 1,Trades : 2,Trades : 1,Trades : 1,Trades : 1,Trades : 0,Trades : 0,Trades : 6
+P/L : -16 €,P/L : 84 €,P/L : -62 €,P/L : 28 €,P/L : 58 €,P/L : 0 €,P/L : 0 €,P/L : 92 €
+13,14,15,16,17,18,19,
+Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0
+P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €
+20,21,22,23,24,25,26,
+Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0
+P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €
+27,28,29,30,31,,,
+Trades : 0,Trades : 0,Trades : 0,Trades : 0,Trades : 0,,,Trades : 0
+P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,P/L : 0 €,,,P/L : 0 €
+,,,,,,,
+TOTAUX MENSUELS,,,,,,,
+Janvier 2026,,,,,,,
+Total trades :,10,,,,,,
+Total P/L :,172 €,,,,,,
+Performance :,🟢 Mois positif,,,,,,
