@@ -1,0 +1,13 @@
+MODÈLE DE TRADING - FEUILLE DE DONNÉES,,,,,,,,,,,,
+Tous les trades,,,,,,,,,,,,
+N°,Date,Instrument,Direction,Quantité,Prix Entrée,Prix Sortie,Frais,Durée,Résultat Pts,Résultat %,P/L (€),Notes
+1,2024-01-02,EUR/USD,ACHAT,1,1.09500,1.09750,2.00,45 min,25,0.23%,23.00,Setup breakout
+2,2024-01-02,GBP/USD,VENTE,2,1.27300,1.27100,4.00,30 min,20,0.16%,36.00,Rejet résistance
+3,2024-01-03,EUR/USD,VENTE,1,1.09600,1.09800,2.00,1h15,,-0.18%,-22.00,Stop touché
+4,2024-01-04,USD/JPY,ACHAT,1,142.500,142.950,2.00,2h00,45,0.32%,43.00,Tendance journalière
+5,2024-01-05,EUR/GBP,ACHAT,1,0.85800,0.85650,2.00,20 min,,-0.15%,-16.00,Fausse cassure
+6,2024-01-08,EUR/USD,ACHAT,2,1.09200,1.09550,4.00,1h30,35,0.32%,66.00,Rebond support
+7,2024-01-08,GBP/USD,VENTE,1,1.27600,1.27400,2.00,45 min,20,0.16%,18.00,Double top
+8,2024-01-09,USD/JPY,VENTE,1,143.200,143.800,2.00,2h00,,-0.42%,-62.00,Contre tendance
+9,2024-01-10,EUR/USD,ACHAT,1,1.09100,1.09400,2.00,1h00,30,0.27%,28.00,Gap ouverture
+10,2024-01-11,GBP/JPY,ACHAT,1,180.500,181.100,2.00,3h00,60,0.33%,58.00,Momentum fort
