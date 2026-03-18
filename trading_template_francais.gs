@@ -125,9 +125,13 @@ function _setupStats(ss, sh, shTr) {
   var annee = new Date().getFullYear();
   var T     = "'" + CFG.TRADES + "'";
 
-  /* ── Column widths ── */
-  var colW = {1:170, 2:85, 3:85, 4:85, 5:95, 6:120, 7:20,
-              8:130, 9:85, 10:85, 11:85, 12:95, 13:120};
+  /* ── Column widths ──
+     Cols A-F : tableaux gauche  |  Col G : séparateur  |  Cols H-M : tableaux droite
+     IMPORTANT: col B = Profit (adjacent à col A = Label)
+                → les graphiques utilisent la plage A:B contiguë (label|valeur)
+  ── */
+  var colW = {1:170, 2:120, 3:85, 4:85, 5:85, 6:95, 7:20,
+              8:130, 9:120, 10:85, 11:85, 12:85, 13:95};
   Object.keys(colW).forEach(function (c) { sh.setColumnWidth(Number(c), colW[c]); });
 
   /* ── Row heights ── */
@@ -183,7 +187,8 @@ function _setupStats(ss, sh, shTr) {
 
   /* ─────────────────────────────────────────────
      SECTION 2 : DÉTAIL PAR JOUR DE SEMAINE  A17:F25
-     (charts data source: row 17 header + rows 18-24)
+     Ordre colonnes : Info | Profit | Trades | Victoires | Pertes | Taux
+     → Graphique 2 utilise A18:B25 (label+profit contigus)
   ───────────────────────────────────────────── */
   sh.getRange('A17:F17').merge()
     .setValue('Détail par Jour de Semaine')
@@ -192,7 +197,7 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(18, 1, 1, 6)
-    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
+    .setValues([['Info','Profit','Trades','Victoires','Pertes','Taux']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   var joursFull = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -200,18 +205,24 @@ function _setupStats(ss, sh, shTr) {
     var r = 19 + i;
     var wd = i + 1;
     sh.getRange(r, 1).setValue(jour);
-    sh.getRange(r, 2).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+'))');
-    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!L3:L5000>0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!L3:L5000<0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
-    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 2).setFormula(  // Profit (col B) ← adjacent au label
+      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*'+T+'!L3:L5000)')
+      .setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 3).setFormula(  // Trades (col C)
+      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKDAY('+T+'!B3:B5000,2)='+wd+'))');
+    sh.getRange(r, 4).setFormula(  // Victoires (col D)
+      '=SUMPRODUCT(('+T+'!L3:L5000>0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 5).setFormula(  // Pertes (col E)
+      '=SUMPRODUCT(('+T+'!L3:L5000<0)*(WEEKDAY('+T+'!B3:B5000,2)='+wd+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 6).setFormula('=IFERROR(D'+r+'/C'+r+',0)') // Taux (col F)
+      .setNumberFormat('0.00%');
     if (i % 2 === 0) sh.getRange(r, 1, 1, 6).setBackground(CFG.ALT_BG);
   });
   sh.getRange(17, 1, 9, 6).setBorder(true, true, true, true, true, true);
 
   /* ─────────────────────────────────────────────
-     SECTION 3 : DIRECTION BREAKDOWN  A27:F31
-     (Long = ACHAT, Short = VENTE in col D)
+     SECTION 3 : ANALYSE PAR DIRECTION  A27:F30
+     → Graphique 3 utilise A28:B30
   ───────────────────────────────────────────── */
   sh.getRange('A27:F27').merge()
     .setValue('Analyse par Direction')
@@ -220,7 +231,7 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(28, 1, 1, 6)
-    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
+    .setValues([['Info','Profit','Trades','Victoires','Pertes','Taux']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   var dirs = [['Long','ACHAT'],['Short','VENTE']];
@@ -228,17 +239,19 @@ function _setupStats(ss, sh, shTr) {
     var r  = 29 + idx;
     var kw = dir[1];
     sh.getRange(r, 1).setValue(dir[0]);
-    sh.getRange(r, 2).setFormula('=COUNTIF('+T+'!D3:D5000,"'+kw+'")');
-    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*('+T+'!L3:L5000>0))');
-    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*('+T+'!L3:L5000<0))');
-    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
-    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 2).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*'+T+'!L3:L5000)')
+      .setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 3).setFormula('=COUNTIF('+T+'!D3:D5000,"'+kw+'")');
+    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*('+T+'!L3:L5000>0))');
+    sh.getRange(r, 5).setFormula('=SUMPRODUCT(('+T+'!D3:D5000="'+kw+'")*('+T+'!L3:L5000<0))');
+    sh.getRange(r, 6).setFormula('=IFERROR(D'+r+'/C'+r+',0)').setNumberFormat('0.00%');
     if (idx % 2 === 0) sh.getRange(r, 1, 1, 6).setBackground(CFG.ALT_BG);
   });
   sh.getRange(27, 1, 4, 6).setBorder(true, true, true, true, true, true);
 
   /* ─────────────────────────────────────────────
-     SECTION 4 : SYMBOL BREAKDOWN  A33:F38
+     SECTION 4 : ANALYSE PAR SYMBOLE  A33:F39
+     → Graphique 4 utilise A34:B39
   ───────────────────────────────────────────── */
   sh.getRange('A33:F33').merge()
     .setValue('Analyse par Symbole')
@@ -247,24 +260,26 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(34, 1, 1, 6)
-    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
+    .setValues([['Info','Profit','Trades','Victoires','Pertes','Taux']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   var symbols = ['EUR/USD','GBP/USD','USD/JPY','EUR/GBP','NQ'];
   symbols.forEach(function (sym, idx) {
     var r = 35 + idx;
     sh.getRange(r, 1).setValue(sym);
-    sh.getRange(r, 2).setFormula('=COUNTIF('+T+'!C3:C5000,"'+sym+'")');
-    sh.getRange(r, 3).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000>0))');
-    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000<0))');
-    sh.getRange(r, 5).setFormula('=IFERROR(C'+r+'/B'+r+',0)').setNumberFormat('0.00%');
-    sh.getRange(r, 6).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 2).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*'+T+'!L3:L5000)')
+      .setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 3).setFormula('=COUNTIF('+T+'!C3:C5000,"'+sym+'")');
+    sh.getRange(r, 4).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000>0))');
+    sh.getRange(r, 5).setFormula('=SUMPRODUCT(('+T+'!C3:C5000="'+sym+'")*('+T+'!L3:L5000<0))');
+    sh.getRange(r, 6).setFormula('=IFERROR(D'+r+'/C'+r+',0)').setNumberFormat('0.00%');
     if (idx % 2 === 0) sh.getRange(r, 1, 1, 6).setBackground(CFG.ALT_BG);
   });
   sh.getRange(33, 1, 7, 6).setBorder(true, true, true, true, true, true);
 
   /* ─────────────────────────────────────────────
-     SECTION 5 : MONTHLY INFO  H17:M30
+     SECTION 5 : INFORMATIONS MENSUELLES  H17:M30
+     Ordre : Mois | Profit | Trades | Victoires | Pertes | Taux
   ───────────────────────────────────────────── */
   sh.getRange('H17:M17').merge()
     .setValue('Informations Mensuelles')
@@ -273,24 +288,30 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(18, 8, 1, 6)
-    .setValues([['Mois','Trades','Victoires','Pertes','Taux','Profit']])
+    .setValues([['Mois','Profit','Trades','Victoires','Pertes','Taux']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   MOIS.forEach(function (moisNom, m) {
     var r = 19 + m;
     var mn = m + 1;
     sh.getRange(r, 8).setValue(moisNom);
-    sh.getRange(r, 9).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+'))');
-    sh.getRange(r, 10).setFormula('=SUMPRODUCT(('+T+'!L3:L5000>0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 11).setFormula('=SUMPRODUCT(('+T+'!L3:L5000<0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(r, 12).setFormula('=IFERROR(J'+r+'/I'+r+',0)').setNumberFormat('0.00%');
-    sh.getRange(r, 13).setFormula('=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 9).setFormula(   // Profit (col I)
+      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*'+T+'!L3:L5000)')
+      .setNumberFormat('"€ "#,##0.00');
+    sh.getRange(r, 10).setFormula(  // Trades (col J)
+      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+'))');
+    sh.getRange(r, 11).setFormula(  // Victoires (col K)
+      '=SUMPRODUCT(('+T+'!L3:L5000>0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 12).setFormula(  // Pertes (col L)
+      '=SUMPRODUCT(('+T+'!L3:L5000<0)*(MONTH('+T+'!B3:B5000)='+mn+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
+    sh.getRange(r, 13).setFormula('=IFERROR(K'+r+'/J'+r+',0)') // Taux (col M)
+      .setNumberFormat('0.00%');
     if (m % 2 === 0) sh.getRange(r, 8, 1, 6).setBackground(CFG.ALT_BG);
   });
   sh.getRange(17, 8, 14, 6).setBorder(true, true, true, true, true, true);
 
   /* ─────────────────────────────────────────────
-     SECTION 6 : WEEKLY INFO  H33:M40
+     SECTION 6 : INFORMATIONS HEBDOMADAIRES  H33:M40
   ───────────────────────────────────────────── */
   sh.getRange('H33:M33').merge()
     .setValue('Informations Hebdomadaires')
@@ -299,80 +320,28 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(34, 8, 1, 6)
-    .setValues([['Semaine','Trades','Victoires','Pertes','Taux','Profit']])
+    .setValues([['Semaine','Profit','Trades','Victoires','Pertes','Taux']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   for (var w = 0; w < 5; w++) {
     var wr = 35 + w;
     sh.getRange(wr, 8).setValue('Semaine ' + (w + 1));
-    // week number = ISO week within year
-    sh.getRange(wr, 9).setFormula(
+    sh.getRange(wr, 9).setFormula(   // Profit
+      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+')*'+T+'!L3:L5000)')
+      .setNumberFormat('"€ "#,##0.00');
+    sh.getRange(wr, 10).setFormula(  // Trades
       '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+'))');
-    sh.getRange(wr, 10).setFormula(
+    sh.getRange(wr, 11).setFormula(  // Victoires
       '=SUMPRODUCT(('+T+'!L3:L5000>0)*(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(wr, 11).setFormula(
+    sh.getRange(wr, 12).setFormula(  // Pertes
       '=SUMPRODUCT(('+T+'!L3:L5000<0)*(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+')*('+T+'!B3:B5000<>""))');
-    sh.getRange(wr, 12).setFormula('=IFERROR(J'+wr+'/I'+wr+',0)').setNumberFormat('0.00%');
-    sh.getRange(wr, 13).setFormula(
-      '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+')*'+T+'!L3:L5000)').setNumberFormat('"€ "#,##0.00');
+    sh.getRange(wr, 13).setFormula('=IFERROR(K'+wr+'/J'+wr+',0)').setNumberFormat('0.00%');
     if (w % 2 === 0) sh.getRange(wr, 8, 1, 6).setBackground(CFG.ALT_BG);
   }
   sh.getRange(33, 8, 7, 6).setBorder(true, true, true, true, true, true);
 
-  /* ── DONNÉES AUXILIAIRES POUR LES GRAPHIQUES ──────────────────────
-     Chaque graphique nécessite une plage CONTIGUË (2 colonnes : label|valeur).
-     On inscrit de petits tableaux de données dans les lignes 2-10 des colonnes
-     où chaque graphique est ancré (les graphiques flottants recouvrent ces lignes
-     donc elles sont invisibles pour l'utilisateur).
-
-     Graphique 1 Équité    → col C-D  lignes 2-13  (texte blanc sur blanc)
-     Graphique 2 Jours     → col H-I  lignes 2-8
-     Graphique 3 Direction → col M-N  lignes 2-3
-     Graphique 4 Symboles  → col R-S  lignes 2-6
-  ────────────────────────────────────────────────────────────────── */
-
-  // --- Graphique 2 : Jours de semaine ---
-  var joursChartData = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-  joursChartData.forEach(function (j, idx) {
-    var row = 2 + idx;
-    sh.getRange(row, 8).setValue(j);                   // col H : libellé
-    sh.getRange(row, 9).setFormula('=F' + (19 + idx)); // col I : profit du jour
-  });
-  sh.getRange(2, 8, 7, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
-
-  // --- Graphique 3 : Direction ---
-  var dirsData = ['Long','Short'];
-  dirsData.forEach(function (d, idx) {
-    var row = 2 + idx;
-    sh.getRange(row, 13).setValue(d);
-    sh.getRange(row, 14).setFormula('=F' + (29 + idx));
-  });
-  sh.getRange(2, 13, 2, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
-
-  // --- Graphique 4 : Symboles ---
-  var symData = ['EUR/USD','GBP/USD','USD/JPY','EUR/GBP','NQ'];
-  symData.forEach(function (s, idx) {
-    var row = 2 + idx;
-    sh.getRange(row, 18).setValue(s);
-    sh.getRange(row, 19).setFormula('=F' + (35 + idx));
-  });
-  sh.getRange(2, 18, 5, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
-
-  // --- Graphique 1 : Équité cumulée (col C = trade#, col D = équité) ---
-  sh.getRange(2, 3).setValue('Trade');
-  sh.getRange(2, 4).setValue('Équité');
-  for (var eq = 0; eq < 50; eq++) {
-    var eqRow = 3 + eq;
-    var trRow = 3 + eq;  // ligne correspondante dans Tous les trades
-    sh.getRange(eqRow, 3).setFormula(
-      '=IF(ISBLANK(\''+CFG.TRADES+'\'!B'+trRow+'),"",'+eq+')');
-    sh.getRange(eqRow, 4).setFormula(
-      '=IF(ISBLANK(\''+CFG.TRADES+'\'!B'+trRow+'),"",\''+CFG.TRADES+'\'!N'+trRow+')');
-  }
-  sh.getRange(2, 3, 52, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
-
   /* ── GRAPHIQUES ── */
-  SpreadsheetApp.flush();   // commit all cell data before building charts
+  SpreadsheetApp.flush();
   _graphiqueEquite(sh, shTr);
   _graphiqueJoursSemaine(sh);
   _graphiqueDirection(sh);
@@ -381,14 +350,14 @@ function _setupStats(ss, sh, shTr) {
 
 /* ────────────────────────────────────────────────────────────
    CHART 1 : Courbe d'Équité  (col C, row 1)
-   Source : plage contiguë C2:D52 (trade# | équité)
+   Source : colonne N (équité cumulée) du feuillet Trades
 ──────────────────────────────────────────────────────────── */
 function _graphiqueEquite(shStats, shTrades) {
   var chart = shStats.newChart()
     .setChartType(Charts.ChartType.LINE)
-    .addRange(shStats.getRange(2, 3, 52, 2))   // C2:D53 — trade# | équité cumulée
+    .addRange(shTrades.getRange(3, 14, 200, 1))  // N3:N202 — équité cumulée
     .setPosition(1, 3, 5, 5)
-    .setNumHeaders(1)
+    .setNumHeaders(0)
     .setOption('title', 'Courbe d\'Équité')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {title: 'Trades', textStyle: {fontSize: 9}})
@@ -407,14 +376,14 @@ function _graphiqueEquite(shStats, shTrades) {
 
 /* ────────────────────────────────────────────────────────────
    CHART 2 : Performance par Jour  (col H, row 1)
-   Source : plage contiguë H2:I8 (jour | profit)
+   Source : A18:B25 — col A=jour, col B=profit (contigus dans le tableau)
 ──────────────────────────────────────────────────────────── */
 function _graphiqueJoursSemaine(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(2, 8, 7, 2))   // H2:I8 — jour | profit
+    .addRange(sh.getRange(18, 1, 8, 2))   // A18:B25 — [Info/Profit header] + 7 jours
     .setPosition(1, 8, 5, 5)
-    .setNumHeaders(0)
+    .setNumHeaders(1)
     .setOption('title', 'Performance par Jour de Semaine')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
@@ -436,10 +405,10 @@ function _graphiqueJoursSemaine(sh) {
 function _graphiqueDirection(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // Plage contiguë M2:N3 (direction | profit)
-    .addRange(sh.getRange(2, 13, 2, 2))   // M2:N3 — Long/Short | profit
+    // A28:B30 — [Info/Profit header] + Long + Short (contigus dans le tableau)
+    .addRange(sh.getRange(28, 1, 3, 2))   // A28:B30
     .setPosition(1, 13, 5, 5)
-    .setNumHeaders(0)
+    .setNumHeaders(1)
     .setOption('title', 'Direction (Long / Short)')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
@@ -461,10 +430,10 @@ function _graphiqueDirection(sh) {
 function _graphiqueSymboles(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // Plage contiguë R2:S6 (symbole | profit)
-    .addRange(sh.getRange(2, 18, 5, 2))   // R2:S6 — symbole | profit
+    // A34:B39 — [Info/Profit header] + 5 symboles (contigus dans le tableau)
+    .addRange(sh.getRange(34, 1, 6, 2))   // A34:B39
     .setPosition(1, 18, 5, 5)
-    .setNumHeaders(0)
+    .setNumHeaders(1)
     .setOption('title', 'Par Symbole')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
