@@ -91,6 +91,7 @@ function creerModeleTrading() {
 
   _setupStats(ss, shSt, shTr);
   _setupTrades(shTr);
+  _ajouterDonneesExemple(shTr);
   _setupCalendrier(shCal);
 
   // Supprimer la feuille vide par défaut si présente
@@ -400,6 +401,45 @@ function _setupTrades(sh) {
   ]);
 
   sh.setFrozenRows(2);
+}
+
+/* ── Ajouter des données exemple pour visualiser les graphiques ── */
+function _ajouterDonneesExemple(sh) {
+  var today = new Date();
+  var annee = today.getFullYear();
+  var mois  = today.getMonth() + 1;
+
+  var donnees = [
+    // [Date, Actif, Sens, Quantité, PrixEntree, PrixSortie, StopLoss, TakeProfit, Duree, ResultatPts, P/L, Commentaire]
+    [new Date(annee, mois-1, 1), 'EUR/USD', 'ACHAT', 1, 1.0950, 1.0975, 1.0930, 1.1000, '45 min', 25, 23.00, 'Setup breakout'],
+    [new Date(annee, mois-1, 2), 'GBP/USD', 'VENTE', 2, 1.2730, 1.2710, 1.2750, 1.2680, '30 min', 20, 36.00, 'Rejet résistance'],
+    [new Date(annee, mois-1, 3), 'EUR/USD', 'VENTE', 1, 1.0960, 1.0980, 1.0975, 1.0920, '1h15', -20, -22.00, 'Stop touché'],
+    [new Date(annee, mois-1, 5), 'USD/JPY', 'ACHAT', 1, 142.50, 142.95, 142.20, 143.50, '2h00', 45, 43.00, 'Tendance journalière'],
+    [new Date(annee, mois-1, 6), 'EUR/GBP', 'ACHAT', 1, 0.8580, 0.8565, 0.8560, 0.8620, '20 min', -15, -16.00, 'Fausse cassure'],
+    [new Date(annee, mois-1, 7), 'EUR/USD', 'ACHAT', 2, 1.0920, 1.0955, 1.0900, 1.0980, '1h30', 35, 66.00, 'Rebond support'],
+    [new Date(annee, mois-1, 8), 'GBP/USD', 'VENTE', 1, 1.2760, 1.2740, 1.2780, 1.2700, '45 min', 20, 18.00, 'Double top'],
+    [new Date(annee, mois-1, 10), 'USD/JPY', 'VENTE', 1, 143.20, 143.80, 143.50, 142.50, '2h00', -60, -62.00, 'Contre tendance'],
+    [new Date(annee, mois-1, 12), 'EUR/USD', 'ACHAT', 1, 1.0910, 1.0940, 1.0890, 1.0970, '1h00', 30, 28.00, 'Gap ouverture'],
+    [new Date(annee, mois-1, 14), 'GBP/JPY', 'ACHAT', 1, 180.50, 181.10, 180.20, 181.80, '3h00', 60, 58.00, 'Momentum fort'],
+    [new Date(annee, mois-1, 15), 'EUR/USD', 'VENTE', 1, 1.0945, 1.0920, 1.0960, 1.0880, '2h30', 25, 23.75, 'Rejet à la hausse'],
+  ];
+
+  var startRow = 3;
+  donnees.forEach(function(trade, idx) {
+    var row = startRow + idx;
+    sh.getRange(row, 2).setValue(trade[0]);           // Date
+    sh.getRange(row, 3).setValue(trade[1]);           // Actif
+    sh.getRange(row, 4).setValue(trade[2]);           // Sens
+    sh.getRange(row, 5).setValue(trade[3]);           // Quantité
+    sh.getRange(row, 6).setValue(trade[4]);           // Prix Entrée
+    sh.getRange(row, 7).setValue(trade[5]);           // Prix Sortie
+    sh.getRange(row, 8).setValue(trade[6]);           // Stop Loss
+    sh.getRange(row, 9).setValue(trade[7]);           // Take Profit
+    sh.getRange(row, 10).setValue(trade[8]);          // Durée
+    sh.getRange(row, 11).setValue(trade[9]);          // Résultat Pts
+    sh.getRange(row, 12).setValue(trade[10]);         // P/L
+    sh.getRange(row, 13).setValue(trade[11]);         // Commentaire
+  });
 }
 
 
