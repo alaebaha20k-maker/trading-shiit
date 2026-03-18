@@ -319,6 +319,58 @@ function _setupStats(ss, sh, shTr) {
   }
   sh.getRange(33, 8, 7, 6).setBorder(true, true, true, true, true, true);
 
+  /* ── DONNÉES AUXILIAIRES POUR LES GRAPHIQUES ──────────────────────
+     Chaque graphique nécessite une plage CONTIGUË (2 colonnes : label|valeur).
+     On inscrit de petits tableaux de données dans les lignes 2-10 des colonnes
+     où chaque graphique est ancré (les graphiques flottants recouvrent ces lignes
+     donc elles sont invisibles pour l'utilisateur).
+
+     Graphique 1 Équité    → col C-D  lignes 2-13  (texte blanc sur blanc)
+     Graphique 2 Jours     → col H-I  lignes 2-8
+     Graphique 3 Direction → col M-N  lignes 2-3
+     Graphique 4 Symboles  → col R-S  lignes 2-6
+  ────────────────────────────────────────────────────────────────── */
+
+  // --- Graphique 2 : Jours de semaine ---
+  var joursChartData = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  joursChartData.forEach(function (j, idx) {
+    var row = 2 + idx;
+    sh.getRange(row, 8).setValue(j);                   // col H : libellé
+    sh.getRange(row, 9).setFormula('=F' + (19 + idx)); // col I : profit du jour
+  });
+  sh.getRange(2, 8, 7, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
+
+  // --- Graphique 3 : Direction ---
+  var dirsData = ['Long','Short'];
+  dirsData.forEach(function (d, idx) {
+    var row = 2 + idx;
+    sh.getRange(row, 13).setValue(d);
+    sh.getRange(row, 14).setFormula('=F' + (29 + idx));
+  });
+  sh.getRange(2, 13, 2, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
+
+  // --- Graphique 4 : Symboles ---
+  var symData = ['EUR/USD','GBP/USD','USD/JPY','EUR/GBP','NQ'];
+  symData.forEach(function (s, idx) {
+    var row = 2 + idx;
+    sh.getRange(row, 18).setValue(s);
+    sh.getRange(row, 19).setFormula('=F' + (35 + idx));
+  });
+  sh.getRange(2, 18, 5, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
+
+  // --- Graphique 1 : Équité cumulée (col C = trade#, col D = équité) ---
+  sh.getRange(2, 3).setValue('Trade');
+  sh.getRange(2, 4).setValue('Équité');
+  for (var eq = 0; eq < 50; eq++) {
+    var eqRow = 3 + eq;
+    var trRow = 3 + eq;  // ligne correspondante dans Tous les trades
+    sh.getRange(eqRow, 3).setFormula(
+      '=IF(ISBLANK(\''+CFG.TRADES+'\'!B'+trRow+'),"",'+eq+')');
+    sh.getRange(eqRow, 4).setFormula(
+      '=IF(ISBLANK(\''+CFG.TRADES+'\'!B'+trRow+'),"",\''+CFG.TRADES+'\'!N'+trRow+')');
+  }
+  sh.getRange(2, 3, 52, 2).setFontColor(CFG.BLANC).setBackground(CFG.BLANC);
+
   /* ── GRAPHIQUES ── */
   SpreadsheetApp.flush();   // commit all cell data before building charts
   _graphiqueEquite(sh, shTr);
@@ -329,14 +381,14 @@ function _setupStats(ss, sh, shTr) {
 
 /* ────────────────────────────────────────────────────────────
    CHART 1 : Courbe d'Équité  (col C, row 1)
+   Source : plage contiguë C2:D52 (trade# | équité)
 ──────────────────────────────────────────────────────────── */
 function _graphiqueEquite(shStats, shTrades) {
   var chart = shStats.newChart()
     .setChartType(Charts.ChartType.LINE)
-    .addRange(shTrades.getRange(3, CFG.COL_DATE, CFG.MAX_LIGNES, 1)) // col B : dates (axe X)
-    .addRange(shTrades.getRange(3, 14, CFG.MAX_LIGNES, 1))            // col N : équité cumulée
+    .addRange(shStats.getRange(2, 3, 52, 2))   // C2:D53 — trade# | équité cumulée
     .setPosition(1, 3, 5, 5)
-    .setNumHeaders(0)
+    .setNumHeaders(1)
     .setOption('title', 'Courbe d\'Équité')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {title: 'Trades', textStyle: {fontSize: 9}})
@@ -355,14 +407,12 @@ function _graphiqueEquite(shStats, shTrades) {
 
 /* ────────────────────────────────────────────────────────────
    CHART 2 : Performance par Jour  (col H, row 1)
-   Source : rows 18-25  col A (labels) + col F (profit)
+   Source : plage contiguë H2:I8 (jour | profit)
 ──────────────────────────────────────────────────────────── */
 function _graphiqueJoursSemaine(sh) {
-  // Skip header row 18 — use data rows 19-25 directly (Lundi→Dimanche)
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(19, 1, 7, 1))   // A19:A25  — noms des jours
-    .addRange(sh.getRange(19, 6, 7, 1))   // F19:F25  — profit par jour
+    .addRange(sh.getRange(2, 8, 7, 2))   // H2:I8 — jour | profit
     .setPosition(1, 8, 5, 5)
     .setNumHeaders(0)
     .setOption('title', 'Performance par Jour de Semaine')
@@ -386,9 +436,8 @@ function _graphiqueJoursSemaine(sh) {
 function _graphiqueDirection(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // Skip header row 28 — use data rows 29-30 (Long, Short)
-    .addRange(sh.getRange(29, 1, 2, 1))   // A29:A30  — Long / Short
-    .addRange(sh.getRange(29, 6, 2, 1))   // F29:F30  — profit
+    // Plage contiguë M2:N3 (direction | profit)
+    .addRange(sh.getRange(2, 13, 2, 2))   // M2:N3 — Long/Short | profit
     .setPosition(1, 13, 5, 5)
     .setNumHeaders(0)
     .setOption('title', 'Direction (Long / Short)')
@@ -412,9 +461,8 @@ function _graphiqueDirection(sh) {
 function _graphiqueSymboles(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    // Skip header row 34 — use data rows 35-39 (5 symbols)
-    .addRange(sh.getRange(35, 1, 5, 1))   // A35:A39  — symboles
-    .addRange(sh.getRange(35, 6, 5, 1))   // F35:F39  — profit
+    // Plage contiguë R2:S6 (symbole | profit)
+    .addRange(sh.getRange(2, 18, 5, 2))   // R2:S6 — symbole | profit
     .setPosition(1, 18, 5, 5)
     .setNumHeaders(0)
     .setOption('title', 'Par Symbole')
