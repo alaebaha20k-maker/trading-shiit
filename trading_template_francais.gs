@@ -126,8 +126,8 @@ function _setupStats(ss, sh, shTr) {
   var T     = "'" + CFG.TRADES + "'";
 
   /* ── Column widths ── */
-  var colW = {1:170, 2:130, 3:15, 4:100, 5:100, 6:100, 7:100, 8:15,
-              9:130, 10:80, 11:80, 12:80, 13:100};
+  var colW = {1:170, 2:85, 3:85, 4:85, 5:95, 6:120, 7:20,
+              8:130, 9:85, 10:85, 11:85, 12:95, 13:120};
   Object.keys(colW).forEach(function (c) { sh.setColumnWidth(Number(c), colW[c]); });
 
   /* ── Row heights ── */
@@ -192,10 +192,10 @@ function _setupStats(ss, sh, shTr) {
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(18, 1, 1, 6)
-    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit']])
+    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
-  var joursFull = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  var joursFull = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
   joursFull.forEach(function (jour, i) {
     var r = 19 + i;
     var wd = i + 1;
@@ -214,13 +214,13 @@ function _setupStats(ss, sh, shTr) {
      (Long = ACHAT, Short = VENTE in col D)
   ───────────────────────────────────────────── */
   sh.getRange('A27:F27').merge()
-    .setValue('Direction Breakdown')
+    .setValue('Analyse par Direction')
     .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(28, 1, 1, 6)
-    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit']])
+    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   var dirs = [['Long','ACHAT'],['Short','VENTE']];
@@ -241,13 +241,13 @@ function _setupStats(ss, sh, shTr) {
      SECTION 4 : SYMBOL BREAKDOWN  A33:F38
   ───────────────────────────────────────────── */
   sh.getRange('A33:F33').merge()
-    .setValue('Symbol Breakdown')
+    .setValue('Analyse par Symbole')
     .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(34, 1, 1, 6)
-    .setValues([['Info','Trades','Wins','Losses','Win Rate','Profit']])
+    .setValues([['Info','Trades','Victoires','Pertes','Taux','Profit']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   var symbols = ['EUR/USD','GBP/USD','USD/JPY','EUR/GBP','NQ'];
@@ -267,13 +267,13 @@ function _setupStats(ss, sh, shTr) {
      SECTION 5 : MONTHLY INFO  H17:M30
   ───────────────────────────────────────────── */
   sh.getRange('H17:M17').merge()
-    .setValue('Monthly Info')
+    .setValue('Informations Mensuelles')
     .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(18, 8, 1, 6)
-    .setValues([['Month','Trades','Wins','Losses','Win Rate','Profit']])
+    .setValues([['Mois','Trades','Victoires','Pertes','Taux','Profit']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   MOIS.forEach(function (moisNom, m) {
@@ -293,18 +293,18 @@ function _setupStats(ss, sh, shTr) {
      SECTION 6 : WEEKLY INFO  H33:M40
   ───────────────────────────────────────────── */
   sh.getRange('H33:M33').merge()
-    .setValue('Weekly Info')
+    .setValue('Informations Hebdomadaires')
     .setBackground(CFG.NOIR).setFontColor(CFG.BLANC)
     .setFontWeight('bold').setFontSize(11)
     .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
   sh.getRange(34, 8, 1, 6)
-    .setValues([['Week','Trades','Wins','Losses','Win Rate','Profit']])
+    .setValues([['Semaine','Trades','Victoires','Pertes','Taux','Profit']])
     .setFontWeight('bold').setBackground(CFG.BLEU_CLAIR).setHorizontalAlignment('center');
 
   for (var w = 0; w < 5; w++) {
     var wr = 35 + w;
-    sh.getRange(wr, 8).setValue('Week ' + (w + 1));
+    sh.getRange(wr, 8).setValue('Semaine ' + (w + 1));
     // week number = ISO week within year
     sh.getRange(wr, 9).setFormula(
       '=SUMPRODUCT(('+T+'!B3:B5000<>"")*'+'(WEEKNUM('+T+'!B3:B5000,2)='+(w+1)+')*(YEAR('+T+'!B3:B5000)='+annee+'))');
@@ -320,6 +320,7 @@ function _setupStats(ss, sh, shTr) {
   sh.getRange(33, 8, 7, 6).setBorder(true, true, true, true, true, true);
 
   /* ── GRAPHIQUES ── */
+  SpreadsheetApp.flush();   // commit all cell data before building charts
   _graphiqueEquite(sh, shTr);
   _graphiqueJoursSemaine(sh);
   _graphiqueDirection(sh);
@@ -332,7 +333,8 @@ function _setupStats(ss, sh, shTr) {
 function _graphiqueEquite(shStats, shTrades) {
   var chart = shStats.newChart()
     .setChartType(Charts.ChartType.LINE)
-    .addRange(shTrades.getRange(3, 14, CFG.MAX_LIGNES, 1))  // col N : équité cumulée
+    .addRange(shTrades.getRange(3, CFG.COL_DATE, CFG.MAX_LIGNES, 1)) // col B : dates (axe X)
+    .addRange(shTrades.getRange(3, 14, CFG.MAX_LIGNES, 1))            // col N : équité cumulée
     .setPosition(1, 3, 5, 5)
     .setNumHeaders(0)
     .setOption('title', 'Courbe d\'Équité')
@@ -346,7 +348,7 @@ function _graphiqueEquite(shStats, shTrades) {
     .setOption('backgroundColor', {fill: '#ffffff'})
     .setOption('chartArea', {left: 55, top: 35, width: '80%', height: '72%'})
     .setOption('width', 450)
-    .setOption('height', 310)
+    .setOption('height', 340)
     .build();
   shStats.insertChart(chart);
 }
@@ -356,12 +358,13 @@ function _graphiqueEquite(shStats, shTrades) {
    Source : rows 18-25  col A (labels) + col F (profit)
 ──────────────────────────────────────────────────────────── */
 function _graphiqueJoursSemaine(sh) {
+  // Skip header row 18 — use data rows 19-25 directly (Lundi→Dimanche)
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(18, 1, 8, 1))   // A18:A25 labels
-    .addRange(sh.getRange(18, 6, 8, 1))   // F18:F25 profit
+    .addRange(sh.getRange(19, 1, 7, 1))   // A19:A25  — noms des jours
+    .addRange(sh.getRange(19, 6, 7, 1))   // F19:F25  — profit par jour
     .setPosition(1, 8, 5, 5)
-    .setNumHeaders(1)
+    .setNumHeaders(0)
     .setOption('title', 'Performance par Jour de Semaine')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
@@ -371,7 +374,7 @@ function _graphiqueJoursSemaine(sh) {
     .setOption('backgroundColor', {fill: '#ffffff'})
     .setOption('chartArea', {left: 60, top: 35, width: '80%', height: '72%'})
     .setOption('width', 450)
-    .setOption('height', 310)
+    .setOption('height', 340)
     .build();
   sh.insertChart(chart);
 }
@@ -383,11 +386,12 @@ function _graphiqueJoursSemaine(sh) {
 function _graphiqueDirection(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(28, 1, 3, 1))   // A28:A30 labels (header + Long + Short)
-    .addRange(sh.getRange(28, 6, 3, 1))   // F28:F30 profit
+    // Skip header row 28 — use data rows 29-30 (Long, Short)
+    .addRange(sh.getRange(29, 1, 2, 1))   // A29:A30  — Long / Short
+    .addRange(sh.getRange(29, 6, 2, 1))   // F29:F30  — profit
     .setPosition(1, 13, 5, 5)
-    .setNumHeaders(1)
-    .setOption('title', 'Direction')
+    .setNumHeaders(0)
+    .setOption('title', 'Direction (Long / Short)')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
     .setOption('vAxis', {title: 'P/L (€)', textStyle: {fontSize: 9}})
@@ -396,23 +400,24 @@ function _graphiqueDirection(sh) {
     .setOption('backgroundColor', {fill: '#ffffff'})
     .setOption('chartArea', {left: 60, top: 35, width: '80%', height: '72%'})
     .setOption('width', 450)
-    .setOption('height', 310)
+    .setOption('height', 340)
     .build();
   sh.insertChart(chart);
 }
 
 /* ────────────────────────────────────────────────────────────
-   CHART 4 : By Symbols  (col R, row 1)
-   Source : rows 34-39  col A (labels) + col F (profit)
+   CHART 4 : Par Symbole  (col R, row 1)
+   Source : rows 35-39  col A (labels) + col F (profit)
 ──────────────────────────────────────────────────────────── */
 function _graphiqueSymboles(sh) {
   var chart = sh.newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(sh.getRange(34, 1, 6, 1))   // A34:A39 labels (header + 5 symbols)
-    .addRange(sh.getRange(34, 6, 6, 1))   // F34:F39 profit
+    // Skip header row 34 — use data rows 35-39 (5 symbols)
+    .addRange(sh.getRange(35, 1, 5, 1))   // A35:A39  — symboles
+    .addRange(sh.getRange(35, 6, 5, 1))   // F35:F39  — profit
     .setPosition(1, 18, 5, 5)
-    .setNumHeaders(1)
-    .setOption('title', 'By Symbols')
+    .setNumHeaders(0)
+    .setOption('title', 'Par Symbole')
     .setOption('titleTextStyle', {fontSize: 12, bold: true})
     .setOption('hAxis', {textStyle: {fontSize: 9}})
     .setOption('vAxis', {title: 'P/L (€)', textStyle: {fontSize: 9}})
@@ -421,7 +426,7 @@ function _graphiqueSymboles(sh) {
     .setOption('backgroundColor', {fill: '#ffffff'})
     .setOption('chartArea', {left: 60, top: 35, width: '80%', height: '72%'})
     .setOption('width', 450)
-    .setOption('height', 310)
+    .setOption('height', 340)
     .build();
   sh.insertChart(chart);
 }
